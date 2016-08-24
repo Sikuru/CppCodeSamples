@@ -1,16 +1,19 @@
 #pragma once
 #include <BoostAsioLib/BAIoServiceManager.h>
 #include <BoostAsioLib/BATCPConnection.h>
+#include <BoostAsioLib/BAConnectionManager.h>
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
+#include <atomic>
 
 class TcpServerSample
 {
 public:
 	TcpServerSample()
 		: _manager_ptr(BoostAsioLib::IBAIoServiceManager::Create(4))
-		, _is_disposed(false)
+		, _is_disposed(0)
 	{
+		_conn_manager_ptr = BoostAsioLib::IBAConnectionManager::Create();
 		_acceptor.reset(new boost::asio::ip::tcp::acceptor(_manager_ptr->GetIoService()));
 		boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::any(), 9661);
 
@@ -30,7 +33,16 @@ public:
 
 	~TcpServerSample()
 	{
+		++_is_disposed;
 
+		_accepted_conn_ptr->Stop();
+		_accepted_conn_ptr.reset();
+
+		_acceptor->close();
+		_acceptor.reset();
+
+		_manager_ptr.reset();
+		_conn_manager_ptr.reset();
 	}
 
 private:
@@ -43,7 +55,7 @@ private:
 
 		if (!errcode)
 		{
-			_sockets.insert(CONN_MAP::value_type(conn_ptr->GetSocketID(), conn_ptr));
+			_conn_manager_ptr->Register(conn_ptr);
 			conn_ptr->Start();
 		}
 		else
@@ -64,13 +76,14 @@ private:
 		if (bytes_transferred == 0 || errcode)
 		{
 			// disconnect ?
-			_sockets.erase(socket_id);
+			_conn_manager_ptr->Unregister(socket_id);
 			printf("OnDisconnected (OnReceived) ; id=%I64d, thread=%u\n", socket_id, GetCurrentThreadId());
 		}
 		else
 		{
 			// success ?
-			printf("OnReceived ; id=%I64d, thread=%u\n", socket_id, GetCurrentThreadId());
+			BoostAsioLib::IBAConnectionPtr conn = _conn_manager_ptr->Get(socket_id);
+			printf("OnReceived ; id=%I64d(%I64d), thread=%u\n", socket_id, conn->GetSocketID(), GetCurrentThreadId());
 		}
 	}
 
@@ -79,10 +92,8 @@ private:
 
 	boost::scoped_ptr<boost::asio::ip::tcp::acceptor> _acceptor;
 	BoostAsioLib::IBATCPConnectionPtr _accepted_conn_ptr;
+	BoostAsioLib::IBAConnectionManagerPtr _conn_manager_ptr;
 
-	typedef std::map<long long, BoostAsioLib::IBATCPConnectionPtr> CONN_MAP;
-	CONN_MAP _sockets;
-
-	bool _is_disposed;
+	std::atomic<int> _is_disposed;
 };
 
