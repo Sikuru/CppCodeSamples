@@ -1,0 +1,21 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/CppCodeSamples/BoostAsioLib/Debug
+/CppCodeSamples/BoostAsioLib/Release
+/CppCodeSamples/BoostAsioLib/x64
+*.suo
+/CppCodeSamples/CppCodeSamples/Debug
+/CppCodeSamples/CppCodeSamples/Release
+/CppCodeSamples/CppCodeSamples/x64
+/CppCodeSamples/CppWebApiServer/Debug
+/CppCodeSamples/CppWebApiServer/Release
+/CppCodeSamples/CppWebApiServer/x64
+/CppCodeSamples/Debug
+/CppCodeSamples/Release
+/CppCodeSamples/x64
+/CppCodeSamples/ipch
+*.stackdump
+*.db
+*.opendb
